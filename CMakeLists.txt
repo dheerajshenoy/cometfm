@@ -25,6 +25,8 @@ qt_add_executable(${PROJECT_NAME}
     src/Panel.cpp
     src/PreviewPanel.cpp
     src/ListView.cpp
+
+    src/FileSystemModel.hpp
 )
 
 # tell cmake to link the executable to the Qt 6 core and test modules

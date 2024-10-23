@@ -10,9 +10,8 @@ Comet::Comet(QWidget *parent) : QMainWindow(parent) {
 }
 
 void Comet::initSignalsSlots() noexcept {
-    connect(m_file_panel, &Panel::dirChanged, this, [&](QString path) {
-        qDebug() << "Current Directory: " << path;
-    });
+    // connect(m_file_panel, &Panel::dirChanged, this, [&](QString path) {
+    // });
 }
 
 void Comet::initLayout() noexcept {

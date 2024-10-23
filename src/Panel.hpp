@@ -2,10 +2,13 @@
 
 #include <QWidget>
 #include <QVBoxLayout>
-#include <QFileSystemModel>
 #include <QObject>
 #include <QKeyEvent>
+#include <QShortcut>
+#include <QHash>
+#include <QKeySequence>
 #include "ListView.hpp"
+#include "FileSystemModel.hpp"
 
 class Panel : public QWidget {
 Q_OBJECT
@@ -20,22 +23,24 @@ public:
     void SelectItem() noexcept;
     void NextItem() noexcept;
     void PrevItem() noexcept;
+    void MarkOrUnmarkItem() noexcept;
+    void GotoFirstItem() noexcept;
+    void GotoLastItem() noexcept;
 
   signals:
-    void dirChanged(QString path);
-
-protected:
-    void keyPressEvent(QKeyEvent *e) override;
+    void beforeDirChange();
+    void afterDirChange(QString path);
 
 private:
-
+    QString currentItem() noexcept;
+    void initKeybinds() noexcept;
     void handleItemDoubleClicked(const QModelIndex& index) noexcept;
     void initSignalsSlots() noexcept;
     bool isValidPath(QString path) noexcept;
 
     QVBoxLayout *m_layout = new QVBoxLayout();
     ListView *m_list_view = new ListView();
-    QFileSystemModel *m_model = new QFileSystemModel();
+    FileSystemModel *m_model = new FileSystemModel();
 
     QString m_current_dir;
 };

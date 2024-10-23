@@ -1,0 +1,43 @@
+#+TITLE: CometFM
+#+AUTHOR: Dheeraj Vittal Shenoy <dheerajshenoy22@gmail.com>
+
+A modern, sleek and fast GUI file manager for the impatient
+
+* Table of Contents :toc:
+- [[#introduction][Introduction]]
+- [[#why-another-file-manager-][Why another file manager ?]]
+- [[#todos][TODOs]]
+
+* Introduction
+
+This is a file manager written using the Qt GUI framework leveraging the performance and robustness of C++.
+
+* Why another file manager ?
+
+The file managers for linux aren’t that great for me. So I decided to write my own.
+
+* TODOs
+
+- [x] List contents of directory
+- [x] Vim bindings for navigation
+
+- [ ] Menubar
+  - [x] File Menu
+  - [ ] Edit Menu
+  - [ ] View Menu
+  - [ ] Tools Menu
+
+- [ ] Statusbar
+
+- [ ] Preview
+  - [ ] Image
+  - [ ] Video
+  - [ ] Documents
+
+- [ ] Operations
+  - [ ] Rename
+  - [ ] Move
+  - [ ] Copy
+  - [ ] Cut
+  - [ ] Paste
+  - [ ] Trash

@@ -1,5 +1,4 @@
 #include "Panel.hpp"
-#include <qfilesystemmodel.h>
 
 Panel::Panel(QWidget *parent) : QWidget(parent) {
     this->setLayout(m_layout);
@@ -10,6 +9,26 @@ Panel::Panel(QWidget *parent) : QWidget(parent) {
     this->show();
 
     initSignalsSlots();
+    initKeybinds();
+}
+
+void Panel::initKeybinds() noexcept {
+
+    QShortcut *kb_up_directory = new QShortcut(QKeySequence("h"), this);
+    QShortcut *kb_next_item = new QShortcut(QKeySequence("j"), this);
+    QShortcut *kb_prev_item = new QShortcut(QKeySequence("k"), this);
+    QShortcut *kb_select_item = new QShortcut(QKeySequence("l"), this);
+    QShortcut *kb_goto_first_item = new QShortcut(QKeySequence("g,g"), this);
+    QShortcut *kb_goto_last_item = new QShortcut(QKeySequence("Shift+g"), this);
+    QShortcut *kb_mark_item = new QShortcut(QKeySequence("Space"), this);
+
+    connect(kb_next_item, &QShortcut::activated, this, &Panel::NextItem);
+    connect(kb_prev_item, &QShortcut::activated, this, &Panel::PrevItem);
+    connect(kb_select_item, &QShortcut::activated, this, &Panel::SelectItem);
+    connect(kb_up_directory, &QShortcut::activated, this, &Panel::UpDirectory);
+    connect(kb_goto_last_item, &QShortcut::activated, this, &Panel::GotoLastItem);
+    connect(kb_goto_first_item, &QShortcut::activated, this, &Panel::GotoFirstItem);
+    connect(kb_mark_item, &QShortcut::activated, this, &Panel::MarkOrUnmarkItem);
 }
 
 void Panel::initSignalsSlots() noexcept {
@@ -18,9 +37,11 @@ void Panel::initSignalsSlots() noexcept {
         m_list_view->setCurrentIndex(index);
     });
 
-    connect(m_model, &QFileSystemModel::directoryLoaded, this, [&](const QString& path) {
-        m_list_view->setRootIndex(m_model->index(path));
+    connect(m_model, &QFileSystemModel::directoryLoaded, this, [&]() {
         m_list_view->setCurrentIndex(m_model->index(0, 0, m_list_view->rootIndex()));
+    });
+
+    connect(this, &Panel::beforeDirChange, this, [&]() {
     });
 
 }
@@ -46,9 +67,12 @@ void Panel::setCurrentDir(QString path) noexcept {
     }
 
     if (isValidPath(path)) {
+        emit beforeDirChange();
         m_model->setRootPath(path);
         m_current_dir = path;
-        emit dirChanged(m_current_dir);
+
+        m_list_view->setRootIndex(m_model->index(path));
+        emit afterDirChange(m_current_dir);
     }
 }
 
@@ -58,7 +82,9 @@ QString Panel::getCurrentDir() noexcept {
 
 Panel::~Panel() {}
 
-// Interactive Functions
+///////////////////////////
+// Interactive Functions //
+///////////////////////////
 
 void Panel::NextItem() noexcept {
     QModelIndex currentIndex = m_list_view->currentIndex();
@@ -79,11 +105,11 @@ void Panel::NextItem() noexcept {
 void Panel::PrevItem() noexcept {
     QModelIndex currentIndex = m_list_view->currentIndex();
     int prevRow = currentIndex.row() - 1;
-    
+
     // Loop
     if (prevRow < 0)
         prevRow = m_model->rowCount(m_list_view->rootIndex()) - 1;
-    
+
     QModelIndex prevIndex = m_model->index(prevRow, 0, m_list_view->rootIndex());
 
     if (prevIndex.isValid()) {
@@ -109,29 +135,27 @@ void Panel::UpDirectory() noexcept {
     QDir currentDir(m_current_dir);
 
     if (currentDir.cdUp()) {
+        emit beforeDirChange();
         m_current_dir = currentDir.absolutePath();
         m_list_view->setRootIndex(m_model->index(m_current_dir));
-        emit dirChanged(m_current_dir);
+        emit afterDirChange(m_current_dir);
     }
     // TODO: Add hook
 }
 
-void Panel::keyPressEvent(QKeyEvent *e) {
-    switch(e->key()) {
-        case Qt::Key_H:
-            UpDirectory();
-            break;
+void Panel::MarkOrUnmarkItem() noexcept {
+    QModelIndex currentIndex = m_list_view->currentIndex();
+    currentIndex = m_model->index(currentIndex.row(), currentIndex.column(), m_list_view->rootIndex());
+    if (m_model->data(currentIndex, static_cast<int>(Role::Marked)).toBool())
+        m_model->setData(currentIndex, false, static_cast<int>(Role::Marked));
+    else
+        m_model->setData(currentIndex, true, static_cast<int>(Role::Marked));
+}
 
-        case Qt::Key_J:
-            NextItem();
-            break;
+void Panel::GotoFirstItem() noexcept {
+    m_list_view->setCurrentIndex(m_model->index(0, 0, m_list_view->rootIndex()));
+}
 
-        case Qt::Key_K:
-            PrevItem();
-            break;
-
-        case Qt::Key_L:
-            SelectItem();
-            break;
-    }
+void Panel::GotoLastItem() noexcept {
+    m_list_view->setCurrentIndex(m_model->index(m_model->rowCount(m_list_view->rootIndex()) - 1, 0, m_list_view->rootIndex()));
 }
