@@ -191,7 +191,12 @@ bool Panel::DeleteItems() noexcept {
     if (m_model->hasMarks()) {
         return true;
     } else {
-        return QFile::remove(getCurrentItem());
+        if (m_model->isDir(m_list_view->currentIndex())) {
+            QDir dir(getCurrentItem());
+            return dir.removeRecursively();
+        }
+        else
+          return QFile::remove(getCurrentItem());
     }
     return false;
 }

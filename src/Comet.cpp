@@ -17,6 +17,12 @@ void Comet::initSignalsSlots() noexcept {
 
   connect(m_file_panel, &Panel::currentItemChanged, m_preview_panel,
           &PreviewPanel::Preview);
+
+  connect(m_minibuffer, &Minibuffer::returnPressed, this, &Comet::ProcessMinibuffer);
+}
+
+void Comet::ProcessMinibuffer(const QStringList& commandlist) noexcept {
+    qDebug() << commandlist;
 }
 
 void Comet::TogglePreviewPanel(bool state) noexcept {

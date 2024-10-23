@@ -14,8 +14,12 @@ Minibuffer::Minibuffer(QWidget *parent)
         clearFocus();
     });
 
+    connect(m_minibuffer, &LineEdit::returnPressed, this, &Minibuffer::ReturnPressed);
+
     m_minibuffer->setHidden(true);
     m_prompt_label->setHidden(true);
+
+    keybinds();
 }
 
 QString Minibuffer::getInput(const QString& prompt) noexcept {
@@ -40,6 +44,43 @@ void Minibuffer::ExecuteCommand() noexcept {
     m_minibuffer->setVisible(true);
     m_prompt_label->setText("Command");
     m_minibuffer->setFocus();
+    m_minibuffer->clear();
 }
 
-Minibuffer::~Minibuffer() {}
+void Minibuffer::ReturnPressed() noexcept {
+    QString minibufferText = m_minibuffer->text();
+    m_minibuffer_history.push_back(minibufferText);
+    const QStringList commandlist = minibufferText.split(" ");
+    emit returnPressed(commandlist);
+    emit m_minibuffer->hideRequested();
+    m_minibuffer_history_current_index = -1;
+}
+
+void Minibuffer::keybinds() noexcept {
+  QShortcut *kb_history_prev_item = new QShortcut(QKeySequence("Alt+p"), this);
+  QShortcut *kb_history_next_item = new QShortcut(QKeySequence("Alt+n"), this);
+
+  connect(kb_history_prev_item, &QShortcut::activated, this, [&]() {
+      if (m_minibuffer_history.size() == 0) return; // Do nothing if history is empty
+
+      if (m_minibuffer_history_current_index <= 0)
+          m_minibuffer_history_current_index = m_minibuffer_history.size() - 1;
+      else
+          m_minibuffer_history_current_index--;
+      m_minibuffer->setText(m_minibuffer_history.at(m_minibuffer_history_current_index));
+  });
+
+  connect(kb_history_next_item, &QShortcut::activated, this, [&]() {
+      if (m_minibuffer_history.size() == 0) return; // Do nothing if history is empty
+
+      if (m_minibuffer_history_current_index >= m_minibuffer_history.size() - 1)
+          m_minibuffer_history_current_index = 0;
+      else
+          m_minibuffer_history_current_index++;
+      m_minibuffer->setText(m_minibuffer_history.at(m_minibuffer_history_current_index));
+  });
+}
+
+Minibuffer::~Minibuffer() {
+    // TODO: write the minibuffer history file
+}

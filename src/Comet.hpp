@@ -31,6 +31,7 @@ public:
     void NewFile(const int& nfiles = -1) noexcept;
     void NewFolder(const int& nfolders = -1) noexcept;
     void DeleteItems() noexcept;
+    void ProcessMinibuffer(const QStringList& commandlist) noexcept;
 
 private:
     void initLayout() noexcept;
@@ -62,4 +63,8 @@ private:
     Panel *m_file_panel = nullptr;
     PreviewPanel *m_preview_panel = nullptr;
     Minibuffer *m_minibuffer = nullptr;
+
+    QStringList commandList = { "rename", "mark", "unmark", "delete",
+                                "trash", "copy", "move", "exit",
+                                "new-folder", "new-file", "toggle-hidden-files" };
 };
