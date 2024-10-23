@@ -44,6 +44,7 @@ void Comet::initLayout() noexcept {
 
   m_layout->setContentsMargins(0, 0, 0, 0);
   m_splitter->setContentsMargins(0, 0, 0, 0);
+  m_widget->setContentsMargins(0, 0, 0, 0);
   m_widget->setLayout(m_layout);
   m_layout->addWidget(m_splitter);
   m_splitter->addWidget(m_file_panel);

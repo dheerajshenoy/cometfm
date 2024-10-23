@@ -1,5 +1,6 @@
 #+TITLE: CometFM
 #+AUTHOR: Dheeraj Vittal Shenoy <dheerajshenoy22@gmail.com>
+#+ATTR_HTML: :align center
 
 A modern, sleek and fast GUI file manager for the impatient
 
@@ -11,6 +12,8 @@ A modern, sleek and fast GUI file manager for the impatient
 * Introduction
 
 This is a file manager written using the Qt GUI framework leveraging the performance and robustness of C++.
+
+[[./images/screenshot.png]]
 
 * Why another file manager ?
 
