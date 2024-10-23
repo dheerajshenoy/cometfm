@@ -18,6 +18,10 @@ public:
   explicit FileSystemModel(QObject *parent = nullptr)
       : QFileSystemModel(parent) {}
 
+    void removeMarkedFile(const QModelIndex& index) {
+        m_markedFiles.contains(index) && m_markedFiles.remove(index);
+    }
+
     bool hasMarks() {
         return m_markedFiles.size() > 0;
     }
@@ -33,11 +37,11 @@ public:
     return markedFiles;
   }
 
-  // Override flags to make items editable
-  Qt::ItemFlags flags(const QModelIndex &index) const override {
-    Qt::ItemFlags defaultFlags = QFileSystemModel::flags(index);
-    return defaultFlags | Qt::ItemIsEditable; // Make items editable
-  }
+  // // Override flags to make items editable
+  // Qt::ItemFlags flags(const QModelIndex &index) const override {
+  //   Qt::ItemFlags defaultFlags = QFileSystemModel::flags(index);
+  //   return defaultFlags | Qt::ItemIsEditable; // Make items editable
+  // }
 
   // Override setData to support the custom role
   bool setData(const QModelIndex &index, const QVariant &value,

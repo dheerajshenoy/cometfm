@@ -1,6 +1,5 @@
 #include "Panel.hpp"
-#include "FileSystemModel.hpp"
-#include <qabstractitemmodel.h>
+#include <qdesktopservices.h>
 
 Panel::Panel(QWidget *parent) : QWidget(parent) {
     this->setLayout(m_layout);
@@ -25,6 +24,7 @@ void Panel::initSignalsSlots() noexcept {
 
     connect(m_model, &QFileSystemModel::directoryLoaded, this, [&]() {
         m_list_view->setCurrentIndex(m_model->index(0, 0, m_list_view->rootIndex()));
+        m_list_view->setCurrentIndex(m_model->index(0, 0, m_list_view->rootIndex()));
     });
 
     connect(this, &Panel::beforeDirChange, this, [&]() {
@@ -39,9 +39,16 @@ void Panel::initSignalsSlots() noexcept {
             });
 }
 
+QString Panel::getCurrentItem() noexcept {
+    return m_current_dir + QDir::separator() + m_model->data(m_list_view->currentIndex()).toString();
+}
+
 void Panel::handleItemDoubleClicked(const QModelIndex& index) noexcept {
+    QString filepath = m_model->filePath(index);
     if (m_model->isDir(index)) {
-        setCurrentDir(m_model->filePath(index));
+        setCurrentDir(filepath);
+    } else {
+        QDesktopServices::openUrl(QUrl::fromLocalFile(filepath));
     }
 }
 
@@ -114,11 +121,13 @@ void Panel::PrevItem() noexcept {
 
 void Panel::SelectItem() noexcept {
     QModelIndex currentIndex = m_list_view->currentIndex();
+    QString filepath = m_model->filePath(currentIndex);
     if (m_model->isDir(currentIndex)) {
-        setCurrentDir(m_model->filePath(currentIndex));
+        setCurrentDir(filepath);
     }
     else {
         // TODO: handle File
+        QDesktopServices::openUrl(QUrl::fromLocalFile(filepath));
     }
 
     // TODO: Add hook
@@ -139,10 +148,11 @@ void Panel::UpDirectory() noexcept {
 void Panel::MarkOrUnmarkItem() noexcept {
     QModelIndex currentIndex = m_list_view->currentIndex();
     currentIndex = m_model->index(currentIndex.row(), currentIndex.column(), m_list_view->rootIndex());
-    if (m_model->data(currentIndex, static_cast<int>(Role::Marked)).toBool())
+    if (m_model->data(currentIndex, static_cast<int>(Role::Marked)).toBool()) {
         m_model->setData(currentIndex, false, static_cast<int>(Role::Marked));
-    else
-        m_model->setData(currentIndex, true, static_cast<int>(Role::Marked));
+        m_model->removeMarkedFile(currentIndex);
+    } else
+      m_model->setData(currentIndex, true, static_cast<int>(Role::Marked));
 }
 
 void Panel::GotoFirstItem() noexcept {
@@ -153,15 +163,35 @@ void Panel::GotoLastItem() noexcept {
     m_list_view->setCurrentIndex(m_model->index(m_model->rowCount(m_list_view->rootIndex()) - 1, 0, m_list_view->rootIndex()));
 }
 
-void Panel::MoveItems() noexcept {
+bool Panel::MoveItems() noexcept {
 
+    return true;
 }
 
-void Panel::RenameItems() noexcept {
+bool Panel::RenameItems() noexcept {
+  if (m_model->hasMarks()) {
+    // TODO: handle multiple rename
+    return true;
+  } else {
+    // current selection single rename
+    QModelIndex currentIndex = m_list_view->currentIndex();
+    QString newFileName = QInputDialog::getText(this, "Rename", "Enter a new name for the file");
+
+    // If user cancels or the new file name is empty
+    if (newFileName.isEmpty() || newFileName.isNull())
+        return false;
+
+    return QFile::rename(getCurrentItem(), m_current_dir + QDir::separator() + newFileName);
+  }
+
+  return false;
+}
+
+bool Panel::DeleteItems() noexcept {
     if (m_model->hasMarks()) {
-        // TODO: handle multiple rename
+        return true;
     } else {
-        // current selection single rename
-        // QFile().rename()
+        return QFile::remove(getCurrentItem());
     }
+    return false;
 }

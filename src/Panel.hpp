@@ -7,6 +7,9 @@
 #include <QShortcut>
 #include <QHash>
 #include <QKeySequence>
+#include <QMessageBox>
+#include <QInputDialog>
+#include <QDesktopServices>
 #include "ListView.hpp"
 #include "FileSystemModel.hpp"
 
@@ -26,8 +29,9 @@ public:
     void MarkOrUnmarkItem() noexcept;
     void GotoFirstItem() noexcept;
     void GotoLastItem() noexcept;
-    void RenameItems() noexcept;
-    void MoveItems() noexcept;
+    bool RenameItems() noexcept;
+    bool MoveItems() noexcept;
+    bool DeleteItems() noexcept;
 
   signals:
     void beforeDirChange();
@@ -35,6 +39,7 @@ public:
     void currentItemChanged(const QString& path);
 
 private:
+    QString getCurrentItem() noexcept;
     QString currentItem() noexcept;
     void initKeybinds() noexcept;
     void handleItemDoubleClicked(const QModelIndex& index) noexcept;

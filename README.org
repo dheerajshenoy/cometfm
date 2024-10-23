@@ -37,11 +37,14 @@ The file managers for linux aren’t that great for me. So I decided to write my
 - [ ] Async
 
 - [ ] Operations
-  - [ ] Rename
+  - [x] Rename
   - [ ] Move
   - [ ] Copy
   - [ ] Cut
   - [ ] Paste
+  - [x] Delete
   - [ ] Trash
+
+  - [ ] Bulk Operations
 
 - [ ] Lua Integration for configuration

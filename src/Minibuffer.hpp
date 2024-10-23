@@ -35,7 +35,7 @@ public:
     ~Minibuffer();
 
     QString getInput(const QString& prompt) noexcept;
-    QString message(const QString& message, const int& s = 2) noexcept;
+    void message(const QString& message, const int& s = 2) noexcept;
     void ExecuteCommand() noexcept;
 
 private:

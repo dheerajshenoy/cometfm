@@ -13,6 +13,9 @@ Minibuffer::Minibuffer(QWidget *parent)
         setHidden(true);
         clearFocus();
     });
+
+    m_minibuffer->setHidden(true);
+    m_prompt_label->setHidden(true);
 }
 
 QString Minibuffer::getInput(const QString& prompt) noexcept {
@@ -20,9 +23,10 @@ QString Minibuffer::getInput(const QString& prompt) noexcept {
     m_minibuffer->setVisible(true);
 }
 
-QString Minibuffer::message(const QString& message, const int& s) noexcept {
+void Minibuffer::message(const QString& message, const int& s) noexcept {
 
     m_prompt_label->setVisible(true);
+    m_minibuffer->setVisible(false);
     m_prompt_label->setText(message);
 
     QTimer::singleShot(s * 1000, [&]() {

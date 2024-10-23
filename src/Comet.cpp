@@ -1,5 +1,7 @@
 #include "Comet.hpp"
+#include <qdir.h>
 #include <qkeysequence.h>
+#include <qshortcut.h>
 
 Comet::Comet(QWidget *parent) : QMainWindow(parent) {
   initLayout();       // init layout
@@ -55,6 +57,8 @@ void Comet::initKeybinds() noexcept {
     QShortcut *kb_goto_last_item = new QShortcut(QKeySequence("Shift+g"), this);
     QShortcut *kb_mark_item = new QShortcut(QKeySequence("Space"), this);
     QShortcut *kb_command = new QShortcut(QKeySequence(":"), this);
+    QShortcut *kb_rename_items = new QShortcut(QKeySequence("Shift+r"), this);
+    QShortcut *kb_delete_items = new QShortcut(QKeySequence("Shift+d"), this);
 
     connect(kb_next_item, &QShortcut::activated, m_file_panel, &Panel::NextItem);
     connect(kb_prev_item, &QShortcut::activated, m_file_panel, &Panel::PrevItem);
@@ -63,8 +67,23 @@ void Comet::initKeybinds() noexcept {
     connect(kb_goto_last_item, &QShortcut::activated, m_file_panel, &Panel::GotoLastItem);
     connect(kb_goto_first_item, &QShortcut::activated, m_file_panel, &Panel::GotoFirstItem);
     connect(kb_mark_item, &QShortcut::activated, m_file_panel, &Panel::MarkOrUnmarkItem);
-
     connect(kb_command, &QShortcut::activated, this, &Comet::ExecuteExtendedCommand);
+    connect(kb_rename_items, &QShortcut::activated, this, &Comet::RenameItems);
+    connect(kb_delete_items, &QShortcut::activated, this, &Comet::DeleteItems);
+}
+
+void Comet::RenameItems() noexcept {
+    if (m_file_panel->RenameItems())
+        m_minibuffer->message("Rename Successful!");
+    else
+        m_minibuffer->message("Error while renaming!", 5);
+}
+
+void Comet::DeleteItems() noexcept {
+    if (m_file_panel->DeleteItems())
+        m_minibuffer->message("Deletion Successful!");
+    else
+        m_minibuffer->message("Error while deleting!", 5);
 }
 
 void Comet::ExecuteExtendedCommand() noexcept {
@@ -97,13 +116,61 @@ void Comet::initMenubar() noexcept {
 
   m_viewmenu__preview_panel = new QAction("Preview Panel");
   m_viewmenu__preview_panel->setCheckable(true);
+  m_viewmenu__preview_panel->setChecked(true);
 
   m_viewmenu->addAction(m_viewmenu__preview_panel);
 
   m_menubar->addMenu(m_filemenu);
   m_menubar->addMenu(m_viewmenu);
 
-  connect(m_viewmenu__preview_panel, &QAction::triggered, this, &Comet::TogglePreviewPanel);
+  connect(m_viewmenu__preview_panel, &QAction::triggered, this,
+          &Comet::TogglePreviewPanel);
+
+  connect(m_filemenu__create_new_file, &QAction::triggered, this,
+          [&]() { this->NewFile(); });
+
+  connect(m_filemenu__create_new_folder, &QAction::triggered, this,
+          [&]() { this->NewFolder(); });
+}
+
+bool Comet::createEmptyFile(const QString &filePath) noexcept {
+  QFile file(filePath);
+
+  if (file.open(QIODevice::WriteOnly)) {
+    file.close();
+    return true;
+  }
+  return false;
+}
+
+// Create an empty file
+void Comet::NewFile(const int& nfiles) noexcept {
+    // Interactive file creation
+    if (nfiles == -1) {
+        QString filename = QInputDialog::getText(this, "Create New File", "Enter the name for the file");
+
+        if (!(filename.isEmpty() && filename.isNull())) {
+            if (createEmptyFile(m_file_panel->getCurrentDir() + QDir::separator() + filename))
+                m_minibuffer->message("File created successfully!");
+            else
+                m_minibuffer->message("Error creating file!");
+        }
+    }
+}
+
+// Create an empty folder
+void Comet::NewFolder(const int& nfolders) noexcept {
+    // Interactive folder creation
+    if (nfolders == -1) {
+        QString dirname = QInputDialog::getText(this, "Create Folder(s)", "Enter a folder name (slash separations are considered as sub-directories)");
+        if (!(dirname.isEmpty() && dirname.isNull())) {
+            QDir dir;
+            if (dir.mkpath(m_file_panel->getCurrentDir() + QDir::separator() + dirname))
+                m_minibuffer->message("Folders created successfully!");
+            else
+                m_minibuffer->message("Error creating folders!");
+        }
+    }
 }
 
 void Comet::initStatusbar() noexcept {}

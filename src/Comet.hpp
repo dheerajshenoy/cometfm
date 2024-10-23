@@ -27,6 +27,10 @@ public:
     void setCurrentDir(QString path);
     void TogglePreviewPanel(bool state) noexcept;
     void ExecuteExtendedCommand() noexcept;
+    void RenameItems() noexcept;
+    void NewFile(const int& nfiles = -1) noexcept;
+    void NewFolder(const int& nfolders = -1) noexcept;
+    void DeleteItems() noexcept;
 
 private:
     void initLayout() noexcept;
@@ -37,6 +41,7 @@ private:
     void handleDirChange() noexcept;
     void initKeybinds() noexcept;
     bool renderDir();
+    bool createEmptyFile(const QString& filename) noexcept;
 
     QWidget *m_widget = new QWidget();
     QVBoxLayout *m_layout = new QVBoxLayout();
