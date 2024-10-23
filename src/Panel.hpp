@@ -26,10 +26,13 @@ public:
     void MarkOrUnmarkItem() noexcept;
     void GotoFirstItem() noexcept;
     void GotoLastItem() noexcept;
+    void RenameItems() noexcept;
+    void MoveItems() noexcept;
 
   signals:
     void beforeDirChange();
     void afterDirChange(QString path);
+    void currentItemChanged(const QString& path);
 
 private:
     QString currentItem() noexcept;

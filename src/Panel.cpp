@@ -1,11 +1,13 @@
 #include "Panel.hpp"
+#include "FileSystemModel.hpp"
+#include <qabstractitemmodel.h>
 
 Panel::Panel(QWidget *parent) : QWidget(parent) {
     this->setLayout(m_layout);
     m_layout->addWidget(m_list_view);
     m_list_view->setModel(m_model);
     m_model->index(0, 0);
-    m_list_view->setSelectionMode(QAbstractItemView::ExtendedSelection);
+    m_list_view->setSelectionMode(QAbstractItemView::SingleSelection);
     this->show();
 
     initSignalsSlots();
@@ -13,22 +15,6 @@ Panel::Panel(QWidget *parent) : QWidget(parent) {
 }
 
 void Panel::initKeybinds() noexcept {
-
-    QShortcut *kb_up_directory = new QShortcut(QKeySequence("h"), this);
-    QShortcut *kb_next_item = new QShortcut(QKeySequence("j"), this);
-    QShortcut *kb_prev_item = new QShortcut(QKeySequence("k"), this);
-    QShortcut *kb_select_item = new QShortcut(QKeySequence("l"), this);
-    QShortcut *kb_goto_first_item = new QShortcut(QKeySequence("g,g"), this);
-    QShortcut *kb_goto_last_item = new QShortcut(QKeySequence("Shift+g"), this);
-    QShortcut *kb_mark_item = new QShortcut(QKeySequence("Space"), this);
-
-    connect(kb_next_item, &QShortcut::activated, this, &Panel::NextItem);
-    connect(kb_prev_item, &QShortcut::activated, this, &Panel::PrevItem);
-    connect(kb_select_item, &QShortcut::activated, this, &Panel::SelectItem);
-    connect(kb_up_directory, &QShortcut::activated, this, &Panel::UpDirectory);
-    connect(kb_goto_last_item, &QShortcut::activated, this, &Panel::GotoLastItem);
-    connect(kb_goto_first_item, &QShortcut::activated, this, &Panel::GotoFirstItem);
-    connect(kb_mark_item, &QShortcut::activated, this, &Panel::MarkOrUnmarkItem);
 }
 
 void Panel::initSignalsSlots() noexcept {
@@ -44,6 +30,13 @@ void Panel::initSignalsSlots() noexcept {
     connect(this, &Panel::beforeDirChange, this, [&]() {
     });
 
+    connect(m_list_view->selectionModel(), &QItemSelectionModel::currentChanged,
+            this,
+            [this](const QModelIndex &current, const QModelIndex &previous) {
+              emit currentItemChanged(
+                  m_current_dir + QDir::separator() +
+                  m_model->data(current, Qt::DisplayRole).toString());
+            });
 }
 
 void Panel::handleItemDoubleClicked(const QModelIndex& index) noexcept {
@@ -158,4 +151,17 @@ void Panel::GotoFirstItem() noexcept {
 
 void Panel::GotoLastItem() noexcept {
     m_list_view->setCurrentIndex(m_model->index(m_model->rowCount(m_list_view->rootIndex()) - 1, 0, m_list_view->rootIndex()));
+}
+
+void Panel::MoveItems() noexcept {
+
+}
+
+void Panel::RenameItems() noexcept {
+    if (m_model->hasMarks()) {
+        // TODO: handle multiple rename
+    } else {
+        // current selection single rename
+        // QFile().rename()
+    }
 }

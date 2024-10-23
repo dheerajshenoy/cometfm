@@ -3,9 +3,9 @@
 #include <QBrush>
 #include <QFileSystemModel>
 #include <QFont>
+#include <QList>
 #include <QMap>
 #include <QModelIndex>
-#include <QList>
 
 enum class Role {
   Marked = Qt::UserRole + 1,
@@ -17,6 +17,10 @@ class FileSystemModel : public QFileSystemModel {
 public:
   explicit FileSystemModel(QObject *parent = nullptr)
       : QFileSystemModel(parent) {}
+
+    bool hasMarks() {
+        return m_markedFiles.size() > 0;
+    }
 
   QList<QString> getMarkedFiles() {
     QList<QString> markedFiles(m_markedFiles.size());
@@ -55,7 +59,8 @@ public:
                 int role = Qt::DisplayRole) const override {
     if (role == static_cast<int>(Role::Marked)) {
       // Return the marked status if available
-      return m_markedFiles.value(index, false); // Default to false if not marked
+      return m_markedFiles.value(index,
+                                 false); // Default to false if not marked
     }
 
     // if (role == Qt::ForegroundRole) {
@@ -82,7 +87,6 @@ public:
   }
 
 private:
-
-    // Map to store the marked status of files
-    QMap<QModelIndex, bool> m_markedFiles;
+  // Map to store the marked status of files
+  QMap<QModelIndex, bool> m_markedFiles;
 };

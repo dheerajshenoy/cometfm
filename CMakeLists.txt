@@ -17,6 +17,12 @@ set(CMAKE_AUTOUIC ON)
 find_package(Qt6 COMPONENTS Core REQUIRED)
 find_package(Qt6 COMPONENTS Widgets REQUIRED)
 
+add_definitions( -DMAGICKCORE_QUANTUM_DEPTH=16 )
+add_definitions( -DMAGICKCORE_HDRI_ENABLE=0 )
+
+# find imagemagick
+find_package(ImageMagick COMPONENTS Magick++ REQUIRED)
+
 qt_standard_project_setup()
 # define an executable built from a source file
 qt_add_executable(${PROJECT_NAME}
@@ -25,12 +31,16 @@ qt_add_executable(${PROJECT_NAME}
     src/Panel.cpp
     src/PreviewPanel.cpp
     src/ListView.cpp
+    src/Minibuffer.cpp
 
     src/FileSystemModel.hpp
 )
 
 # tell cmake to link the executable to the Qt 6 core and test modules
-target_link_libraries(${PROJECT_NAME} PRIVATE Qt6::Core Qt6::Widgets)
+target_link_libraries(${PROJECT_NAME} PRIVATE Qt6::Core Qt6::Widgets ${ImageMagick_LIBRARIES})
+
+# Include directories
+target_include_directories(${PROJECT_NAME} PRIVATE ${ImageMagick_INCLUDE_DIRS})
 
 add_custom_target(run
     COMMAND cometfm
