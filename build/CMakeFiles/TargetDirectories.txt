@@ -1,0 +1,6 @@
+/home/neo/Gits/cometfm/build/CMakeFiles/cometfm.dir
+/home/neo/Gits/cometfm/build/CMakeFiles/run.dir
+/home/neo/Gits/cometfm/build/CMakeFiles/edit_cache.dir
+/home/neo/Gits/cometfm/build/CMakeFiles/rebuild_cache.dir
+/home/neo/Gits/cometfm/build/CMakeFiles/cometfm_autogen_timestamp_deps.dir
+/home/neo/Gits/cometfm/build/CMakeFiles/cometfm_autogen.dir

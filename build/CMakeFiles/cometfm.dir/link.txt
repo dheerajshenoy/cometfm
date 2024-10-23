@@ -1,0 +1,1 @@
+/usr/bin/c++ CMakeFiles/cometfm.dir/cometfm_autogen/mocs_compilation.cpp.o CMakeFiles/cometfm.dir/src/main.cpp.o CMakeFiles/cometfm.dir/src/Comet.cpp.o -o cometfm  /usr/lib/libQt6Widgets.so.6.8.0 /usr/lib/libQt6Gui.so.6.8.0 /usr/lib/libGLX.so /usr/lib/libOpenGL.so /usr/lib/libQt6Core.so.6.8.0
