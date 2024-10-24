@@ -1,69 +1,57 @@
 #include "Comet.hpp"
-#include <qdir.h>
-#include <qkeysequence.h>
-#include <qshortcut.h>
 
 Comet::Comet(QWidget *parent) : QMainWindow(parent) {
   initLayout();       // init layout
   initMenubar();      // init menubar
-  initStatusbar();    // init statusbar
   initSignalsSlots(); // init signals and slots
   initKeybinds();
+  setupCommandMap();
   setCurrentDir("~"); // set the current directory
-
 }
 
 void Comet::initSignalsSlots() noexcept {
-  // connect(m_file_panel, &Panel::dirChanged, this, [&](QString path) {});
 
   connect(m_file_panel, &Panel::currentItemChanged, m_preview_panel,
           &PreviewPanel::Preview);
 
-  connect(m_minibuffer, &Minibuffer::returnPressed, this, &Comet::ProcessMinibuffer);
+  connect(m_file_panel, &Panel::currentItemChanged, m_statusbar,
+          &Statusbar::SetFile);
+
+  // connect(m_minibuffer, &Minibuffer::returnPressed, this, &Comet::ProcessMinibuffer);
 
   connect(m_file_panel, &Panel::afterDirChange, m_modeline, &Modeline::setCurrentDir);
-
   connect(m_modeline, &Modeline::directoryChangeRequested, m_file_panel, &Panel::setCurrentDir);
 
 }
 
+void Comet::ShowHelp() noexcept {
+
+}
+
+void Comet::setupCommandMap() noexcept {
+    commandMap["rename"] = [this]() { RenameItems(); };
+    commandMap["help"] = [this]() { ShowHelp(); };
+    commandMap["delete"] = [this]() { DeleteItems(); };
+    commandMap["mark"] = [this]() { m_file_panel->MarkItems(); };
+    commandMap["toggle-mark"] = [this]() { m_file_panel->MarkOrUnmarkItems(); };
+    commandMap["unmark"] = [this]() { m_file_panel->UnmarkItems(); };
+    commandMap["new-file"] = [this]() { NewFile(); };
+    commandMap["new-folder"] = [this]() { NewFolder(); };
+    commandMap["trash"] = [this]() { TrashItems(); };
+    commandMap["exit"] = [this]() { QApplication::quit(); };
+    commandMap["toggle-hidden-files"] = [this]() { m_file_panel->ToggleHiddenFiles(); };
+}
+
 void Comet::ProcessMinibuffer(const QStringList& commandlist) noexcept {
+    if (commandlist.isEmpty())
+        return;
+
     QString command = commandlist[0];
+    // QString arg = (commandlist.size() > 1) ? commandlist[1] : "";
 
-    if (command == "rename") {
-        RenameItems();
-    }
-
-    else if (command == "delete") {
-        DeleteItems();
-    }
-
-    else if (command == "mark") {
-        m_file_panel->MarkItems();
-    }
-
-    else if (command == "toggle-mark") {
-        m_file_panel->MarkOrUnmarkItems();
-    }
-
-    else if (command == "move") {
-        MoveItems();
-    }
-
-    else if (command == "new-file") {
-        NewFile();
-    }
-
-    else if (command == "new-folder") {
-        NewFolder();
-    }
-
-    else if (command == "trash") {
-        TrashItems();
-    }
-
-    else if (command == "exit") {
-        QApplication::quit();
+    if (commandMap.contains(command)) {
+        commandMap[command]();  // Call the associated function
+    } else {
     }
 }
 
@@ -80,22 +68,29 @@ void Comet::TogglePreviewPanel(bool state) noexcept {
 }
 
 void Comet::initLayout() noexcept {
-  m_file_panel = new Panel();
-  m_preview_panel = new PreviewPanel();
-  m_minibuffer = new Minibuffer();
-  m_modeline = new Modeline();
+    m_file_panel = new Panel();
 
-  m_layout->setContentsMargins(0, 0, 0, 0);
-  m_splitter->setContentsMargins(0, 0, 0, 0);
-  m_widget->setContentsMargins(0, 0, 0, 0);
-  m_widget->setLayout(m_layout);
-  m_layout->addWidget(m_modeline);
-  m_layout->addWidget(m_splitter);
-  m_splitter->addWidget(m_file_panel);
-  m_splitter->addWidget(m_preview_panel);
-  m_layout->addWidget(m_minibuffer);
-  this->setCentralWidget(m_widget);
-  this->show();
+    m_preview_panel = new PreviewPanel();
+    m_modeline = new Modeline();
+    m_statusbar = new Statusbar();
+    m_inputbar = new Inputbar();
+
+    m_file_panel->setFocus();
+
+    m_inputbar->hide();
+
+    m_layout->setContentsMargins(0, 0, 0, 0);
+    m_splitter->setContentsMargins(0, 0, 0, 0);
+    m_widget->setContentsMargins(0, 0, 0, 0);
+    m_widget->setLayout(m_layout);
+    m_layout->addWidget(m_modeline);
+    m_layout->addWidget(m_splitter);
+    m_splitter->addWidget(m_file_panel);
+    m_splitter->addWidget(m_preview_panel);
+    m_layout->addWidget(m_inputbar);
+    m_layout->addWidget(m_statusbar);
+    this->setCentralWidget(m_widget);
+    this->show();
 }
 
 void Comet::initKeybinds() noexcept {
@@ -110,6 +105,9 @@ void Comet::initKeybinds() noexcept {
     QShortcut *kb_command = new QShortcut(QKeySequence(":"), this);
     QShortcut *kb_rename_items = new QShortcut(QKeySequence("Shift+r"), this);
     QShortcut *kb_delete_items = new QShortcut(QKeySequence("Shift+d"), this);
+    QShortcut *kb_search = new QShortcut(QKeySequence("/"), this);
+    QShortcut *kb_search_next = new QShortcut(QKeySequence("n"), this);
+    QShortcut *kb_search_prev = new QShortcut(QKeySequence("Shift+n"), this);
 
     connect(kb_next_item, &QShortcut::activated, m_file_panel, &Panel::NextItem);
     connect(kb_prev_item, &QShortcut::activated, m_file_panel, &Panel::PrevItem);
@@ -121,45 +119,60 @@ void Comet::initKeybinds() noexcept {
     connect(kb_command, &QShortcut::activated, this, &Comet::ExecuteExtendedCommand);
     connect(kb_rename_items, &QShortcut::activated, this, &Comet::RenameItems);
     connect(kb_delete_items, &QShortcut::activated, this, &Comet::DeleteItems);
+    connect(kb_search, &QShortcut::activated, this, &Comet::Search);
+    connect(kb_search_next, &QShortcut::activated, this, &Comet::SearchNext);
+    connect(kb_search_prev, &QShortcut::activated, this, &Comet::SearchPrev);
+}
+
+void Comet::Search() noexcept {
+    m_file_panel->Search(m_inputbar->getInput("Search"));
+}
+
+void Comet::SearchNext() noexcept {
+    m_file_panel->SearchNext();
+}
+
+void Comet::SearchPrev() noexcept {
+    m_file_panel->SearchPrev();
 }
 
 void Comet::RenameItems() noexcept {
     if (m_file_panel->RenameItems())
-        m_minibuffer->message("Rename Successful!");
+        m_statusbar->Message("Rename Successful!");
     else
-        m_minibuffer->message("Error while renaming!", 5);
+        m_statusbar->Message("Error while renaming!", 5);
 }
 
 void Comet::DeleteItems() noexcept {
     if (m_file_panel->DeleteItems())
-        m_minibuffer->message("Deletion Successful!");
+        m_statusbar->Message("Deletion Successful!");
     else
-        m_minibuffer->message("Error while deleting!", 5);
+        m_statusbar->Message("Error while deleting!", 5);
 }
 
 void Comet::MoveItems() noexcept {
     if (m_file_panel->MoveItems())
-        m_minibuffer->message("Deletion Successful!");
+        m_statusbar->Message("Deletion Successful!");
     else
-        m_minibuffer->message("Error while moving!", 5);
+        m_statusbar->Message("Error while moving!", 5);
 }
 
 void Comet::TrashItems() noexcept {
     if (m_file_panel->TrashItems())
-        m_minibuffer->message("Deletion Successful!");
+        m_statusbar->Message("Deletion Successful!");
     else
-        m_minibuffer->message("Error while moving!", 5);
+        m_statusbar->Message("Error while moving!", 5);
 }
 
 void Comet::ExecuteExtendedCommand() noexcept {
-    m_minibuffer->ExecuteCommand();
+    // m_minibuffer->ExecuteCommand();
 }
 
 void Comet::initMenubar() noexcept {
   m_menubar = new QMenuBar();
+  this->setMenuBar(m_menubar);
 
   m_filemenu = new QMenu("File");
-
 
   m_filemenu__new_window = new QAction("New Window");
   m_filemenu__new_tab = new QAction("New Tab");
@@ -168,7 +181,6 @@ void Comet::initMenubar() noexcept {
   m_filemenu__create_new_folder = new QAction("New Folder");
   m_filemenu__create_new_file = new QAction("New File");
 
-  this->setMenuBar(m_menubar);
 
   m_filemenu->addAction(m_filemenu__new_window);
   m_filemenu->addAction(m_filemenu__new_tab);
@@ -185,8 +197,17 @@ void Comet::initMenubar() noexcept {
 
   m_viewmenu->addAction(m_viewmenu__preview_panel);
 
+  m_tools_menu = new QMenu("Tools");
+
+  m_tools_menu__search = new QAction("Search");
+  m_tools_menu__command_in_folder = new QAction("Command in Folder");
+
+  m_tools_menu->addAction(m_tools_menu__search);
+  m_tools_menu->addAction(m_tools_menu__command_in_folder);
+
   m_menubar->addMenu(m_filemenu);
   m_menubar->addMenu(m_viewmenu);
+  m_menubar->addMenu(m_tools_menu);
 
   connect(m_viewmenu__preview_panel, &QAction::triggered, this,
           &Comet::TogglePreviewPanel);
@@ -196,6 +217,12 @@ void Comet::initMenubar() noexcept {
 
   connect(m_filemenu__create_new_folder, &QAction::triggered, this,
           [&]() { this->NewFolder(); });
+
+  connect(m_tools_menu__search, &QAction::triggered, this, [&]() {
+      QString searchText = QInputDialog::getText(this, "Search", "Enter a file/directory name");
+      if (!(searchText.isEmpty() && searchText.isNull()))
+          m_file_panel->Search(searchText);
+  });
 }
 
 bool Comet::createEmptyFile(const QString &filePath) noexcept {
@@ -216,9 +243,9 @@ void Comet::NewFile(const int& nfiles) noexcept {
 
         if (!(filename.isEmpty() && filename.isNull())) {
             if (createEmptyFile(m_file_panel->getCurrentDir() + QDir::separator() + filename))
-                m_minibuffer->message("File created successfully!");
+                m_statusbar->Message("File created successfully!");
             else
-                m_minibuffer->message("Error creating file!");
+                m_statusbar->Message("Error creating file!");
         }
     }
 }
@@ -231,14 +258,12 @@ void Comet::NewFolder(const int& nfolders) noexcept {
         if (!(dirname.isEmpty() && dirname.isNull())) {
             QDir dir;
             if (dir.mkpath(m_file_panel->getCurrentDir() + QDir::separator() + dirname))
-                m_minibuffer->message("Folders created successfully!");
+                m_statusbar->Message("Folders created successfully!");
             else
-                m_minibuffer->message("Error creating folders!");
+                m_statusbar->Message("Error creating folders!");
         }
     }
 }
-
-void Comet::initStatusbar() noexcept {}
 
 void Comet::setCurrentDir(QString path) { m_file_panel->setCurrentDir(path); }
 

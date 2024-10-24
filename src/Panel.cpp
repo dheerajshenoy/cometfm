@@ -1,16 +1,35 @@
 #include "Panel.hpp"
+#include <qabstractitemview.h>
 #include <qdesktopservices.h>
+#include <qevent.h>
+#include <qitemselectionmodel.h>
+#include <qnamespace.h>
 
 Panel::Panel(QWidget *parent) : QWidget(parent) {
     this->setLayout(m_layout);
     m_layout->addWidget(m_list_view);
     m_list_view->setModel(m_model);
     m_model->index(0, 0);
-    m_list_view->setSelectionMode(QAbstractItemView::SingleSelection);
+    m_list_view->setSelectionMode(QAbstractItemView::ExtendedSelection);
+    m_list_view->setSelectionBehavior(QAbstractItemView::SelectionBehavior::SelectRows);
     this->show();
 
     initSignalsSlots();
     initKeybinds();
+    initContextMenu();
+}
+
+void Panel::initContextMenu() noexcept {
+
+    m_context_action_open = new QAction("Open");
+    m_context_action_open_with = new QAction("Open With");
+    m_context_action_open_terminal = new QAction("Open Terminal Here");
+    m_context_action_cut = new QAction("Cut");
+    m_context_action_copy = new QAction("Copy");
+    m_context_action_paste = new QAction("Paste");
+    m_context_action_delete = new QAction("Delete");
+    m_context_action_trash = new QAction("Trash");
+    m_context_action_properties = new QAction("Properties");
 }
 
 void Panel::initKeybinds() noexcept {
@@ -18,16 +37,11 @@ void Panel::initKeybinds() noexcept {
 
 void Panel::initSignalsSlots() noexcept {
     connect(m_list_view, &QListView::doubleClicked, this, &Panel::handleItemDoubleClicked);
-    connect(m_list_view, &QListView::clicked, this, [&](const QModelIndex &index) {
-        m_list_view->setCurrentIndex(index);
-    });
 
     connect(m_model, &QFileSystemModel::directoryLoaded, this, [&]() {
         m_list_view->setCurrentIndex(m_model->index(0, 0, m_list_view->rootIndex()));
         m_list_view->setCurrentIndex(m_model->index(0, 0, m_list_view->rootIndex()));
-    });
-
-    connect(this, &Panel::beforeDirChange, this, [&]() {
+      m_list_view->selectionModel()->select(m_list_view->currentIndex(), QItemSelectionModel::SelectionFlag::Select);
     });
 
     connect(m_list_view->selectionModel(), &QItemSelectionModel::currentChanged,
@@ -67,11 +81,10 @@ void Panel::setCurrentDir(QString path) noexcept {
     }
 
     if (isValidPath(path)) {
-        emit beforeDirChange();
         m_model->setRootPath(path);
+        m_list_view->setRootIndex(m_model->index(path));
         m_current_dir = path;
 
-        m_list_view->setRootIndex(m_model->index(path));
         emit afterDirChange(m_current_dir);
     }
 }
@@ -94,7 +107,7 @@ void Panel::NextItem() noexcept {
     if (nextRow >= m_model->rowCount(m_list_view->rootIndex()))
         nextRow = 0;
 
-    QModelIndex nextIndex = m_model->index(nextRow, currentIndex.column(), m_list_view->rootIndex());
+    QModelIndex nextIndex = m_model->index(nextRow, 0, m_list_view->rootIndex());
     if (nextIndex.isValid()) {
         m_list_view->setCurrentIndex(nextIndex);
         m_list_view->scrollTo(nextIndex);
@@ -124,46 +137,55 @@ void Panel::SelectItem() noexcept {
     QString filepath = m_model->filePath(currentIndex);
     if (m_model->isDir(currentIndex)) {
         setCurrentDir(filepath);
-    }
-    else {
-        // TODO: handle File
-        QDesktopServices::openUrl(QUrl::fromLocalFile(filepath));
+    } else {
+      // TODO: handle File
+      QDesktopServices::openUrl(QUrl::fromLocalFile(filepath));
     }
 
     // TODO: Add hook
 }
 
 void Panel::UpDirectory() noexcept {
-    QDir currentDir(m_current_dir);
+    QString old_dir = m_current_dir;
+    QDir currentDir(old_dir);
 
     if (currentDir.cdUp()) {
-        emit beforeDirChange();
         m_current_dir = currentDir.absolutePath();
         m_list_view->setRootIndex(m_model->index(m_current_dir));
+        m_list_view->setCurrentIndex(m_model->index(old_dir));
         emit afterDirChange(m_current_dir);
     }
     // TODO: Add hook
 }
 
 void Panel::MarkOrUnmarkItems() noexcept {
-    QModelIndex currentIndex = m_list_view->currentIndex();
-    currentIndex = m_model->index(currentIndex.row(), currentIndex.column(), m_list_view->rootIndex());
-    if (m_model->data(currentIndex, static_cast<int>(Role::Marked)).toBool()) {
-        m_model->setData(currentIndex, false, static_cast<int>(Role::Marked));
-        m_model->removeMarkedFile(currentIndex);
-    } else
-      m_model->setData(currentIndex, true, static_cast<int>(Role::Marked));
+    auto indexes = m_list_view->selectionModel()->selectedIndexes();
 
+    for (auto index : indexes) {
+      if (m_model->data(index, static_cast<int>(Role::Marked))
+              .toBool()) {
+        m_model->setData(index, false, static_cast<int>(Role::Marked));
+        m_model->removeMarkedFile(index);
+      } else
+        m_model->setData(index, true, static_cast<int>(Role::Marked));
+    }
 }
 
 void Panel::MarkItems() noexcept {
-    m_model->setData(m_list_view->currentIndex(), true, static_cast<int>(Role::Marked));
+    auto indexes = m_list_view->selectionModel()->selectedIndexes();
+
+    for (auto index : indexes) {
+        m_model->setData(index, true, static_cast<int>(Role::Marked));
+    }
 }
 
 void Panel::UnmarkItems() noexcept {
-    QModelIndex currentIndex = m_list_view->currentIndex();
-    m_model->setData(currentIndex, false, static_cast<int>(Role::Marked));
-    m_model->removeMarkedFile(currentIndex);
+    auto indexes = m_list_view->selectionModel()->selectedIndexes();
+
+    for (auto index : indexes) {
+        m_model->setData(index, false, static_cast<int>(Role::Marked));
+        m_model->removeMarkedFile(index);
+    }
 }
 
 void Panel::GotoFirstItem() noexcept {
@@ -215,4 +237,57 @@ bool Panel::DeleteItems() noexcept {
           return QFile::remove(getCurrentItem());
     }
     return false;
+}
+
+void Panel::ToggleHiddenFiles() noexcept {
+  m_hidden_files_shown = !m_hidden_files_shown;
+  if (m_hidden_files_shown)
+    m_model->setFilter(QDir::Dirs | QDir::Files | QDir::NoDotAndDotDot);
+  else
+    m_model->setFilter(QDir::Dirs | QDir::Files | QDir::NoDotAndDotDot |
+                       QDir::Hidden);
+}
+
+void Panel::Search(const QString &searchExpression) noexcept {
+    m_search_index_list = m_model->match(m_model->index(0, 0, m_list_view->rootIndex()), Qt::DisplayRole, searchExpression, -1, Qt::MatchRegularExpression
+                                         );
+    if (m_search_index_list.isEmpty())
+        return;
+    m_list_view->setCurrentIndex(m_search_index_list.at(0));
+    m_search_index_list_index = 0;
+}
+
+void Panel::SearchNext() noexcept {
+    m_search_index_list_index++;
+    if (m_search_index_list_index >= m_search_index_list.size() - 1)
+        m_search_index_list_index = 0;
+    if (m_search_index_list_index < m_search_index_list.size())
+        m_list_view->setCurrentIndex(m_search_index_list.at(m_search_index_list_index));
+}
+
+void Panel::SearchPrev() noexcept {
+    m_search_index_list_index--;
+    if (m_search_index_list_index < 0)
+        m_search_index_list_index = m_search_index_list.size() - 1;
+    m_list_view->setCurrentIndex(m_search_index_list.at(m_search_index_list_index));
+}
+
+void Panel::contextMenuEvent(QContextMenuEvent *event) {
+    QMenu menu(this);
+    if (m_model->hasMarks()) {
+      menu.addAction(m_context_action_open);
+      menu.addAction(m_context_action_open_terminal);
+      menu.addAction(m_context_action_open_with);
+      menu.addAction(m_context_action_cut);
+      menu.addAction(m_context_action_copy);
+      menu.addAction(m_context_action_paste);
+      menu.addAction(m_context_action_delete);
+      menu.addAction(m_context_action_trash);
+      menu.addAction(m_context_action_properties);
+    } else {
+      menu.addAction(m_context_action_open_terminal);
+      menu.addAction(m_context_action_paste);
+      menu.addAction(m_context_action_properties);
+    }
+      menu.exec(event->globalPos());
 }

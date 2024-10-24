@@ -31,9 +31,10 @@ qt_add_executable(${PROJECT_NAME}
     src/Panel.cpp
     src/PreviewPanel.cpp
     src/ListView.cpp
-    src/Minibuffer.cpp
     src/Modeline.cpp
     src/FileSystemModel.hpp
+    src/Statusbar.cpp
+    src/Inputbar.cpp
 )
 
 # tell cmake to link the executable to the Qt 6 core and test modules

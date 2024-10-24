@@ -28,16 +28,20 @@ The file managers for linux aren’t that great for me. So I decided to write my
   - [x] File Menu
   - [ ] Edit Menu
   - [x] View Menu
-  - [ ] Tools Menu
+  - [x] Tools Menu
 
 - [ ] Preview
   - [x] Image
   - [ ] Documents
 
 - [x] Minibuffer (statusbar)
-  - [ ] Commands
+  - [x] Commands
 
 - [ ] Async
+
+- [ ] Focus first file after loading from =QFileSystemModel=
+
+- [x] Regex Search
 
 - [ ] Operations
   - [x] Rename

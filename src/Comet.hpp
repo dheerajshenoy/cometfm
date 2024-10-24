@@ -14,10 +14,14 @@
 #include <QSplitter>
 #include <QShortcut>
 #include <QKeySequence>
+#include <QHash>
+#include <QInputDialog>
+
+#include "Statusbar.hpp"
 #include "Panel.hpp"
 #include "PreviewPanel.hpp"
-#include "Minibuffer.hpp"
 #include "Modeline.hpp"
+#include "Inputbar.hpp"
 
 class Comet : public QMainWindow {
     Q_OBJECT
@@ -35,17 +39,21 @@ public:
     void DeleteItems() noexcept;
     void TrashItems() noexcept;
     void ProcessMinibuffer(const QStringList& commandlist) noexcept;
+    void ShowHelp() noexcept;
+    void Search() noexcept;
+    void SearchNext() noexcept;
+    void SearchPrev() noexcept;
 
 private:
     void initLayout() noexcept;
     void initMenubar() noexcept;
-    void initStatusbar() noexcept;
     void initSignalsSlots() noexcept;
     bool isValidPath(QString path);
     void handleDirChange() noexcept;
     void initKeybinds() noexcept;
     bool renderDir();
     bool createEmptyFile(const QString& filename) noexcept;
+    void setupCommandMap() noexcept;
 
     QWidget *m_widget = new QWidget();
     QVBoxLayout *m_layout = new QVBoxLayout();
@@ -53,6 +61,7 @@ private:
     QMenuBar *m_menubar = nullptr;
     QMenu *m_filemenu = nullptr;
     QMenu *m_viewmenu = nullptr;
+    QMenu *m_tools_menu = nullptr;
 
     QMenu *m_filemenu__create_new_menu = nullptr;
 
@@ -63,13 +72,14 @@ private:
 
     QAction *m_viewmenu__preview_panel = nullptr;
 
+    QAction *m_tools_menu__search = nullptr;
+    QAction *m_tools_menu__command_in_folder = nullptr;
+
     Panel *m_file_panel = nullptr;
     PreviewPanel *m_preview_panel = nullptr;
-    Minibuffer *m_minibuffer = nullptr;
     Modeline *m_modeline = nullptr;
+    Statusbar *m_statusbar = nullptr;
+    Inputbar *m_inputbar = nullptr;
 
-    QStringList commandList = { "rename", "mark", "toggle-mark", "delete",
-                                "trash", "copy", "move", "exit",
-                                "new-folder", "new-file",
-                                "toggle-hidden-files" };
+    QHash<QString, std::function<void(void)>> commandMap;
 };
