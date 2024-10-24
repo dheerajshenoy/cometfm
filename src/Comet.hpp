@@ -17,6 +17,7 @@
 #include "Panel.hpp"
 #include "PreviewPanel.hpp"
 #include "Minibuffer.hpp"
+#include "Modeline.hpp"
 
 class Comet : public QMainWindow {
     Q_OBJECT
@@ -30,7 +31,9 @@ public:
     void RenameItems() noexcept;
     void NewFile(const int& nfiles = -1) noexcept;
     void NewFolder(const int& nfolders = -1) noexcept;
+    void MoveItems() noexcept;
     void DeleteItems() noexcept;
+    void TrashItems() noexcept;
     void ProcessMinibuffer(const QStringList& commandlist) noexcept;
 
 private:
@@ -63,8 +66,10 @@ private:
     Panel *m_file_panel = nullptr;
     PreviewPanel *m_preview_panel = nullptr;
     Minibuffer *m_minibuffer = nullptr;
+    Modeline *m_modeline = nullptr;
 
-    QStringList commandList = { "rename", "mark", "unmark", "delete",
+    QStringList commandList = { "rename", "mark", "toggle-mark", "delete",
                                 "trash", "copy", "move", "exit",
-                                "new-folder", "new-file", "toggle-hidden-files" };
+                                "new-folder", "new-file",
+                                "toggle-hidden-files" };
 };

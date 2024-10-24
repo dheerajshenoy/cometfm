@@ -32,7 +32,7 @@ qt_add_executable(${PROJECT_NAME}
     src/PreviewPanel.cpp
     src/ListView.cpp
     src/Minibuffer.cpp
-
+    src/Modeline.cpp
     src/FileSystemModel.hpp
 )
 

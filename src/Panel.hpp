@@ -26,12 +26,15 @@ public:
     void SelectItem() noexcept;
     void NextItem() noexcept;
     void PrevItem() noexcept;
-    void MarkOrUnmarkItem() noexcept;
+    void MarkOrUnmarkItems() noexcept;
+    void MarkItems() noexcept;
+    void UnmarkItems() noexcept;
     void GotoFirstItem() noexcept;
     void GotoLastItem() noexcept;
     bool RenameItems() noexcept;
     bool MoveItems() noexcept;
     bool DeleteItems() noexcept;
+    bool TrashItems() noexcept;
 
   signals:
     void beforeDirChange();

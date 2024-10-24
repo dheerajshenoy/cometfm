@@ -145,7 +145,7 @@ void Panel::UpDirectory() noexcept {
     // TODO: Add hook
 }
 
-void Panel::MarkOrUnmarkItem() noexcept {
+void Panel::MarkOrUnmarkItems() noexcept {
     QModelIndex currentIndex = m_list_view->currentIndex();
     currentIndex = m_model->index(currentIndex.row(), currentIndex.column(), m_list_view->rootIndex());
     if (m_model->data(currentIndex, static_cast<int>(Role::Marked)).toBool()) {
@@ -153,6 +153,17 @@ void Panel::MarkOrUnmarkItem() noexcept {
         m_model->removeMarkedFile(currentIndex);
     } else
       m_model->setData(currentIndex, true, static_cast<int>(Role::Marked));
+
+}
+
+void Panel::MarkItems() noexcept {
+    m_model->setData(m_list_view->currentIndex(), true, static_cast<int>(Role::Marked));
+}
+
+void Panel::UnmarkItems() noexcept {
+    QModelIndex currentIndex = m_list_view->currentIndex();
+    m_model->setData(currentIndex, false, static_cast<int>(Role::Marked));
+    m_model->removeMarkedFile(currentIndex);
 }
 
 void Panel::GotoFirstItem() noexcept {
@@ -164,7 +175,12 @@ void Panel::GotoLastItem() noexcept {
 }
 
 bool Panel::MoveItems() noexcept {
+    // TODO: Move items
+    return true;
+}
 
+bool Panel::TrashItems() noexcept {
+    // TODO: trash items
     return true;
 }
 

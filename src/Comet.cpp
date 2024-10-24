@@ -10,6 +10,7 @@ Comet::Comet(QWidget *parent) : QMainWindow(parent) {
   initSignalsSlots(); // init signals and slots
   initKeybinds();
   setCurrentDir("~"); // set the current directory
+
 }
 
 void Comet::initSignalsSlots() noexcept {
@@ -19,10 +20,51 @@ void Comet::initSignalsSlots() noexcept {
           &PreviewPanel::Preview);
 
   connect(m_minibuffer, &Minibuffer::returnPressed, this, &Comet::ProcessMinibuffer);
+
+  connect(m_file_panel, &Panel::afterDirChange, m_modeline, &Modeline::setCurrentDir);
+
+  connect(m_modeline, &Modeline::directoryChangeRequested, m_file_panel, &Panel::setCurrentDir);
+
 }
 
 void Comet::ProcessMinibuffer(const QStringList& commandlist) noexcept {
-    qDebug() << commandlist;
+    QString command = commandlist[0];
+
+    if (command == "rename") {
+        RenameItems();
+    }
+
+    else if (command == "delete") {
+        DeleteItems();
+    }
+
+    else if (command == "mark") {
+        m_file_panel->MarkItems();
+    }
+
+    else if (command == "toggle-mark") {
+        m_file_panel->MarkOrUnmarkItems();
+    }
+
+    else if (command == "move") {
+        MoveItems();
+    }
+
+    else if (command == "new-file") {
+        NewFile();
+    }
+
+    else if (command == "new-folder") {
+        NewFolder();
+    }
+
+    else if (command == "trash") {
+        TrashItems();
+    }
+
+    else if (command == "exit") {
+        QApplication::quit();
+    }
 }
 
 void Comet::TogglePreviewPanel(bool state) noexcept {
@@ -41,11 +83,13 @@ void Comet::initLayout() noexcept {
   m_file_panel = new Panel();
   m_preview_panel = new PreviewPanel();
   m_minibuffer = new Minibuffer();
+  m_modeline = new Modeline();
 
   m_layout->setContentsMargins(0, 0, 0, 0);
   m_splitter->setContentsMargins(0, 0, 0, 0);
   m_widget->setContentsMargins(0, 0, 0, 0);
   m_widget->setLayout(m_layout);
+  m_layout->addWidget(m_modeline);
   m_layout->addWidget(m_splitter);
   m_splitter->addWidget(m_file_panel);
   m_splitter->addWidget(m_preview_panel);
@@ -73,7 +117,7 @@ void Comet::initKeybinds() noexcept {
     connect(kb_up_directory, &QShortcut::activated, m_file_panel, &Panel::UpDirectory);
     connect(kb_goto_last_item, &QShortcut::activated, m_file_panel, &Panel::GotoLastItem);
     connect(kb_goto_first_item, &QShortcut::activated, m_file_panel, &Panel::GotoFirstItem);
-    connect(kb_mark_item, &QShortcut::activated, m_file_panel, &Panel::MarkOrUnmarkItem);
+    connect(kb_mark_item, &QShortcut::activated, m_file_panel, &Panel::MarkOrUnmarkItems);
     connect(kb_command, &QShortcut::activated, this, &Comet::ExecuteExtendedCommand);
     connect(kb_rename_items, &QShortcut::activated, this, &Comet::RenameItems);
     connect(kb_delete_items, &QShortcut::activated, this, &Comet::DeleteItems);
@@ -91,6 +135,20 @@ void Comet::DeleteItems() noexcept {
         m_minibuffer->message("Deletion Successful!");
     else
         m_minibuffer->message("Error while deleting!", 5);
+}
+
+void Comet::MoveItems() noexcept {
+    if (m_file_panel->MoveItems())
+        m_minibuffer->message("Deletion Successful!");
+    else
+        m_minibuffer->message("Error while moving!", 5);
+}
+
+void Comet::TrashItems() noexcept {
+    if (m_file_panel->TrashItems())
+        m_minibuffer->message("Deletion Successful!");
+    else
+        m_minibuffer->message("Error while moving!", 5);
 }
 
 void Comet::ExecuteExtendedCommand() noexcept {
